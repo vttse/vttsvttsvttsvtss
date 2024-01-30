@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VLC Links Player</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        main {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        label, input, button {
+            margin-bottom: 10px;
+        }
+
+        input {
+            padding: 8px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .movie-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .movie {
+            margin: 10px;
+            cursor: pointer;
+        }
+
+        .movie img {
+            width: 150px;
+            height: 225px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<main>
+    <!-- حقول إدخال الروابط -->
+    <label for="adminPassword">Admin Password:</label>
+    <input type="password" id="adminPassword" placeholder="Enter admin password">
+    <button onclick="toggleAdminFields()">Toggle Admin Fields</button>
+
+    <div id="adminFields" style="display: none;">
+        <label for="linkName">Link Name:</label>
+        <input type="text" id="linkName" placeholder="Enter link name">
+
+        <label for="linkURL">Link URL:</label>
+        <input type="text" id="linkURL" placeholder="Paste link URL here">
+
+        <label for="linkImage">Link Image URL:</label>
+        <input type="text" id="linkImage" placeholder="Paste link image URL here">
+
+        <!-- زر الحفظ -->
+        <button onclick="saveLink()">Save Link</button>
+
+        <hr>
+    </div>
+
+    <!-- حقل البحث -->
+    <label for="searchLink">Search Links:</label>
+    <input type="text" id="searchLink" placeholder="Search link by name" oninput="searchLinks()">
+
+    <!-- زر البحث -->
+    <button onclick="searchLinks()">Search</button>
+
+    <!-- عرض الروابط -->
+    <div class="movie-container" id="movieContainer"></div>
+</main>
+
+<script>
+    var links = JSON.parse(localStorage.getItem('links')) || [];
+    var adminFieldsVisible = false;
+
+    function toggleAdminFields() {
+        var adminPasswordField = document.getElementById('adminPassword');
+        var adminFieldsDiv = document.getElementById('adminFields');
+
+        if (adminPasswordField.value === '1234') {
+            adminFieldsVisible = !adminFieldsVisible;
+            adminFieldsDiv.style.display = adminFieldsVisible ? 'block' : 'none';
+        } else {
+            alert('Incorrect password. Please try again.');
+        }
+
+        // إفراغ كلمة المرور بغض النظر عن صحتها لتسهيل التجربة
+        adminPasswordField.value = '';
+    }
+
+    function saveLink() {
+        var linkName = document.getElementById('linkName').value;
+        var linkURL = document.getElementById('linkURL').value;
+        var linkImage = document.getElementById('linkImage').value;
+
+        if (linkName && linkURL && linkImage) {
+            var vlcLink = "vlc://" + linkURL;
+
+            if (!links.some(link => link.name === linkName)) {
+                links.push({ name: linkName, url: vlcLink, image: linkImage });
+                localStorage.setItem('links', JSON.stringify(links));
+                updateMovies();
+            } else {
+                alert('Link name already exists. Please choose a different name.');
+            }
+        } else {
+            alert('Please fill in all fields.');
+        }
+    }
+
+    function searchLinks() {
+        var searchQuery = document.getElementById('searchLink').value.toLowerCase();
+        var filteredLinks = links.filter(function(link) {
+            return link.name.toLowerCase().includes(searchQuery);
+        });
+
+        updateMovies(filteredLinks);
+    }
+
+    function playLink(linkURL) {
+        var vlcAnchor = document.createElement('a');
+        vlcAnchor.href = linkURL;
+
+        var clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+        vlcAnchor.dispatchEvent(clickEvent);
+    }
+
+    function updateMovies(filteredLinks) {
+        var movieContainer = document.getElementById('movieContainer');
+        movieContainer.innerHTML = '';
+
+        var displayLinks = filteredLinks || links;
+
+        displayLinks.forEach(function(link) {
+            var movieElement = document.createElement('div');
+            movieElement.classList.add('movie');
+            movieElement.onclick = function() {
+                playLink(link.url);
+            };
+
+            var imageElement = document.createElement('img');
+            imageElement.src = link.image;
+
+            var nameElement = document.createElement('p');
+            nameElement.innerText = link.name;
+
+            movieElement.appendChild(imageElement);
+            movieElement.appendChild(nameElement);
+            movieContainer.appendChild(movieElement);
+        });
+    }
+
+    // عرض الروابط عند تحميل الصفحة
+    updateMovies();
+</script>
+
+</body>
+</html>
